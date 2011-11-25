@@ -130,7 +130,12 @@ function oai_ingest_form_submit($form, &$form_state) {
   $collection_policy = $collection_item->get_datastream_dissemination('COLLECTION_POLICY');
   $xml = simplexml_load_string($collection_policy);
   $namespace = $xml->content_models->content_model['namespace'];
-  $namespace = substr($namespace, 0, strpos($namespace, ":"));
+  // djevans
+  // $namespace = substr($namespace, 0, strpos($namespace, ":")); 
+  // ^^^^ don't do this - returns FALSE if namespace doesn't contain a colon
+  preg_match('/([^:]+)(:?)/',$namespace,$matches);
+  $namespace = $matches[1];
+  // end djevans
 
   if (!empty($form_state['ahah_submission'])) {
     return;
