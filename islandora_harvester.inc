@@ -127,6 +127,36 @@ function build_oai_objects($record, $namespace, $collection_pid, $content_model)
 }
 
 /**
+ * Function: build_mods_objects
+ *
+ * Description: Builds and ingests Fedora objects from OAI inputs
+ *
+ * @param array $record
+ * @param string $namespace
+ * @param string $collection_pid
+ * @param string $content_model
+ */
+function build_mods_objects($record, $namespace, $collection_pid, $content_model) {
+  set_time_limit(0);
+  module_load_include('inc', 'fedora_repository', 'api/fedora_utils');
+  module_load_include('inc', 'fedora_repository', 'api/fedora_item');
+  module_load_include('inc', 'fedora_repository', 'BatchIngest');
+  $thumbnail_file = drupal_get_path('module', 'islandora_harvester') . '/images/Crystal_Clear_action_filenew.png';
+
+  $pid = fedora_item::get_next_PID_in_namespace($namespace);
+  $modsStream = $record['mods'];
+  $dcStream = batch_create_dc_from_mods($modsStream);
+  preg_match('/<dc:title>.*<\/dc:title>/', $dcStream, $matches);
+  $title = preg_replace('/<\/?dc:title>/', "", $matches[0]);
+  $item = fedora_item::ingest_new_item($pid, 'A', $title, 'Owner');
+  $item->modify_datastream_by_value($dcStream, 'DC', "Dublin Core", 'text/xml');
+  $item->add_datastream_from_string($modsStream, 'MODS', "MODS", 'text/xml');
+  $item->add_relationship('isMemberOfCollection', $collection_pid);
+  $item->add_relationship('hasModel', $content_model, 'info:fedora/fedora-system:def/model#');
+  $item->add_datastream_from_file($thumbnail_file, 'TN');
+}
+
+/**
  * Function: build_csv_objects from CSV inputs
  *
  * Description: Builds and ingests Fedora objects
@@ -225,6 +255,56 @@ function create_csv_batch($file, $namespace, $collection_pid) {
   }
   batch_set($batch);
   return;
+}
+
+/**
+ * Function create_mods_batch
+ * 
+ * Description: Builds a series of objects from a MODS collection document
+ * @param File $file
+ * @param string $namespace
+ * @param string $collection_pid
+ */
+function create_mods_batch($file, $namespace, $collection_pid) {
+  set_time_limit(0);
+  $batch = array(
+    'title' => "Creating batches of objects in Fedora repository",
+    'progress_message' => t('Processed @current batches out of @total.'),
+    'operations' => array(),
+    'file' => drupal_get_path('module', 'islandora_harvester') . '/islandora_harvester.inc',
+  );
+
+  $mods_ns = 'http://www.loc.gov/mods/v3';
+
+  $dom = new DOMDocument();
+  $success = $dom->load($file->filepath);
+  $records = array();
+  foreach($dom->getElementsByTagNameNS($mods_ns,'mods') as $element) {
+    $new_document = new DOMDocument('1.0');
+    $node = $new_document->importNode($element,TRUE);
+    $new_document->appendChild($node);
+    $records[] = array('mods' => $new_document->saveXML());
+  }
+
+  foreach ($records as $record) {
+    $batch['operations'][] = array('build_mods_objects',array($record, $namespace, $collection_pid, $content_model));
+  }
+
+  batch_set($batch);
+
+}
+
+/**
+ * Function process_mods_xml
+ *
+ * Description: Loops through urls to create batches of Fedora objects
+ * @param URL $url
+ * @param string $namespace
+ * @param string $collection_pid
+ */
+function process_mods_xml($url, $namespace, $collection_pid, $content_model) {
+  set_time_limit(0);
+  $records = mods_get_data($url);
 }
 
 /**
