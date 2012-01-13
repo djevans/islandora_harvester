@@ -115,6 +115,9 @@ function build_oai_objects($record, $namespace, $collection_pid, $content_model)
 
   $pid = fedora_item::get_next_PID_in_namespace($namespace);
   $dcStream = $record['dc'];
+  /**
+   * @TODO validate here?
+   */
   $modsStream = oai_create_mods($dcStream);
   preg_match('/<dc:title>.*<\/dc:title>/', $dcStream, $matches);
   $title = preg_replace('/<\/?dc:title>/', "", $matches[0]);
@@ -145,6 +148,10 @@ function build_mods_objects($record, $namespace, $collection_pid, $content_model
 
   $pid = fedora_item::get_next_PID_in_namespace($namespace);
   $modsStream = $record['mods'];
+  
+  /**
+   * @TODO validate here?
+   */
   $dcStream = batch_create_dc_from_mods($modsStream);
   preg_match('/<dc:title>.*<\/dc:title>/', $dcStream, $matches);
   $title = preg_replace('/<\/?dc:title>/', "", $matches[0]);
@@ -191,6 +198,49 @@ function build_csv_objects($headers, $data, $namespace, $collection_pid, $conten
   $item->add_datastream_from_string($modsStream, 'MODS', "MODS", 'text/xml');
   $item->add_datastream_from_file($thumbnail_file, 'TN');
 }
+
+/**
+ * Function create_marcxml_batch
+ *
+ * @param string $data
+ * @param string $namespace
+ * @param string $collection_pid
+ */
+function create_marcxml_batch($file,$namespace,$collection_pid) {
+  // transform to mods
+  $xsl = new DOMDocument();
+  $xsl->load($path . '/xslt/MARC21slim2MODS3-4.xsl');
+  $input = new DOMDocument();
+  $input->load($file);
+  $xsl = $proc->importStylesheet($xsl);
+  $newdom = $proc->transformToDoc($input);
+  $content = $newdom->saveXML();
+  // create a new temp file
+  $filepath = file_directory_temp() .'/marc-mods-'. time();
+  $mods_file = file_save_data($content,$filepath);
+  // send it to the MODS function
+  create_mods_batch($mods_file,$namespace,$collection_pid);
+}
+
+/**
+ * Function create_ris_batch
+ *
+ * @param string $data
+ * @param string $namespace
+ * @param string $collection_pid
+ */
+function create_ris_batch($file,$namespace,$collection_pid) {
+  // transform to mods
+  if ($mods = bibutils_ris_file_to_mods_document($file)) {
+    // create a new temp file
+    $content = $mods->saveXML();
+    $filepath = file_directory_temp() .'/ris-mods-'. time();
+    $mods_file = file_save_data($content,$filepath);
+    // send it to the MODS function
+    create_mods_batch($mods_file,$namespace,$collection_pid);
+  }
+}
+
 
 /**
  * Function create_oai_batch
@@ -392,9 +442,9 @@ function oai_create_mods($xmlstr) {
     return " ";
   }
 
-  $xsl = new DomDocument();
+  $xsl = new DOMDocument();
   $xsl->load($path . '/xslt/dc_to_mods.xsl');
-  $input = new DomDocument();
+  $input = new DOMDocument();
   $input->loadXML(trim($xmlstr));
   $xsl = $proc->importStylesheet($xsl);
   $newdom = $proc->transformToDoc($input);
