@@ -206,7 +206,7 @@ function build_csv_objects($headers, $data, $namespace, $collection_pid, $conten
  * @param string $namespace
  * @param string $collection_pid
  */
-function create_marcxml_batch($file,$namespace,$collection_pid) {
+function create_marcxml_batch($file,$namespace,$collection_pid, $content_model) {
   // transform to mods
   $xsl = new DOMDocument();
   $xsl->load($path . '/xslt/MARC21slim2MODS3-4.xsl');
@@ -219,7 +219,7 @@ function create_marcxml_batch($file,$namespace,$collection_pid) {
   $filepath = file_directory_temp() .'/marc-mods-'. time();
   $mods_file = file_save_data($content,$filepath);
   // send it to the MODS function
-  create_mods_batch($mods_file,$namespace,$collection_pid);
+  create_mods_batch($mods_file,$namespace,$collection_pid, $content_model);
 }
 
 /**
@@ -229,7 +229,7 @@ function create_marcxml_batch($file,$namespace,$collection_pid) {
  * @param string $namespace
  * @param string $collection_pid
  */
-function create_ris_batch($file,$namespace,$collection_pid) {
+function create_ris_batch($file,$namespace,$collection_pid, $content_model) {
   // transform to mods
   if ($mods = bibutils_ris_file_to_mods_document($file)) {
     // create a new temp file
@@ -276,7 +276,7 @@ function create_oai_batch($urls, $namespace, $collection_pid, $content_model) {
  * @param string $namespace
  * @param string $collection_pid
  */
-function create_csv_batch($file, $namespace, $collection_pid) {
+function create_csv_batch($file, $namespace, $collection_pid, $content_model) {
   set_time_limit(0);
 
 
@@ -315,7 +315,7 @@ function create_csv_batch($file, $namespace, $collection_pid) {
  * @param string $namespace
  * @param string $collection_pid
  */
-function create_mods_batch($file, $namespace, $collection_pid) {
+function create_mods_batch($file, $namespace, $collection_pid, $content_model) {
   set_time_limit(0);
   $batch = array(
     'title' => "Creating batches of objects in Fedora repository",

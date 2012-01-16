@@ -166,16 +166,16 @@ function oai_ingest_form_submit($form, &$form_state) {
   if ($_FILES['files']['name']['file_upload']) {
     $input_file = file_save_upload('file_upload');
     if ($form_state['values']['input_type'] == 'CSV') {
-      create_csv_batch($input_file, $namespace, $collection_pid);
+      create_csv_batch($input_file, $namespace, $collection_pid, $content_model);
     }
     if ($form_state['values']['input_type'] == 'MODS') {
-      create_mods_batch($input_file, $namespace, $collection_pid);
+      create_mods_batch($input_file, $namespace, $collection_pid, $content_model);
     }
     if ($form_state['values']['input_type'] == 'MARCXML') {
-      create_marcxml_batch($input_file, $namespace, $collection_pid);
+      create_marcxml_batch($input_file, $namespace, $collection_pid, $content_model);
     }
     if ($form_state['values']['input_type'] == 'RIS') {
-      create_ris_batch($input_file, $namespace, $collection_pid);
+      create_ris_batch($input_file, $namespace, $collection_pid, $content_model);
     }
     //oai_ingest_from_file($form_state['values']['file']);
   }
