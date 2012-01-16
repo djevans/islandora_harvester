@@ -153,8 +153,8 @@ function build_mods_objects($record, $namespace, $collection_pid, $content_model
    * @TODO validate here?
    */
   $dcStream = batch_create_dc_from_mods($modsStream);
-  preg_match('/<dc:title>.*<\/dc:title>/', $dcStream, $matches);
-  $title = preg_replace('/<\/?dc:title>/', "", $matches[0]);
+  preg_match('/<mods:title>(.*)<\/mods:title>/', $modsStream, $matches);
+  $title = $matches[1];
   $item = fedora_item::ingest_new_item($pid, 'A', $title, 'Owner');
   $item->modify_datastream_by_value($dcStream, 'DC', "Dublin Core", 'text/xml');
   $item->add_datastream_from_string($modsStream, 'MODS', "MODS", 'text/xml');
