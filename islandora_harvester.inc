@@ -115,9 +115,20 @@ function build_oai_objects($record, $namespace, $collection_pid, $content_model)
 
   $pid = fedora_item::get_next_PID_in_namespace($namespace);
   $dcStream = $record['dc'];
+  
   /**
    * @TODO validate here?
    */
+  $dc_doc = new DOMDocument();
+  if (!$dc_doc->loadXML($dcStream)) {
+    drupal_set_message('The document was not well-formed.','error');
+    return FALSE;
+  };
+  if (!$dc_doc->schemaValidate()) {
+    drupal_set_message('The document was not valid.','error');
+    return FALSE;
+  }
+  
   $modsStream = oai_create_mods($dcStream);
   preg_match('/<dc:title>.*<\/dc:title>/', $dcStream, $matches);
   $title = preg_replace('/<\/?dc:title>/', "", $matches[0]);
@@ -218,6 +229,9 @@ function create_marcxml_batch($file,$namespace,$collection_pid, $content_model) 
   // create a new temp file
   $filepath = file_directory_temp() .'/marc-mods-'. time();
   $mods_file = file_save_data($content,$filepath);
+  
+  // @TODO validate the file
+  
   // send it to the MODS function
   create_mods_batch($mods_file,$namespace,$collection_pid, $content_model);
 }
@@ -235,7 +249,7 @@ function create_ris_batch($file,$namespace,$collection_pid, $content_model) {
     // create a new temp file
     $content = $mods->saveXML();
     $filepath = file_directory_temp() .'/ris-mods-'. time();
-    $mods_file = file_save_data($content,$filepath);
+    $mods_file = file_save_data($content,$filepath);    
     // send it to the MODS function
     create_mods_batch($mods_file,$namespace,$collection_pid);
   }
@@ -328,6 +342,15 @@ function create_mods_batch($file, $namespace, $collection_pid, $content_model) {
 
   $dom = new DOMDocument();
   $success = $dom->load($file->filepath);
+  if (!$success) {
+    drupal_set_message('The document was not well-formed.','error');
+    return FALSE;
+  }
+  $xsd = 'http://www.loc.gov/standards/mods/v3/mods-3-4.xsd';
+  if (!$dom->schemaValidate($xsd)) {
+    drupal_set_message('The document was not valid','error');
+    return FALSE;
+  }
   $records = array();
   foreach($dom->getElementsByTagNameNS($mods_ns,'mods') as $element) {
     $new_document = new DOMDocument('1.0');
