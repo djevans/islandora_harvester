@@ -245,7 +245,7 @@ function create_marcxml_batch($file,$namespace,$collection_pid, $content_model) 
  */
 function create_ris_batch($file,$namespace,$collection_pid, $content_model) {
   // transform to mods
-  if ($mods = bibutils_ris_file_to_mods_document($file)) {
+  if ($mods = bibutils_ris_file_to_mods_document($file->filepath)) {
     // create a new temp file
     $content = $mods->saveXML();
     $filepath = file_directory_temp() .'/ris-mods-'. time();
