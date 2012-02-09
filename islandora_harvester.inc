@@ -249,9 +249,11 @@ function create_ris_batch($file,$namespace,$collection_pid, $content_model) {
     // create a new temp file
     $content = $mods->saveXML();
     $filepath = file_directory_temp() .'/ris-mods-'. time();
-    $mods_file = file_save_data($content,$filepath);    
+    $mods_file = file_save_data($content,$filepath); 
+    $file = new stdClass();
+    $file->filepath = $mods_file;   
     // send it to the MODS function
-    create_mods_batch($mods_file,$namespace,$collection_pid);
+    create_mods_batch($file,$namespace,$collection_pid,$content_model);
   }
 }
 
